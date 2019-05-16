@@ -6,6 +6,7 @@ import requests
 import types
 from functools import partial
 from .request import Request
+# from .xpath import XpathSelector
 
 logger = logging.getLogger('async_request.Crawler')
 
@@ -23,7 +24,7 @@ class Crawler(object):
         self.result_callback = result_callback
 
     async def get_html(self, request):
-        logging.debug('Crawling {}'.format(request.url))
+        logger.debug('Crawling {}'.format(request.url))
         future = self.loop.run_in_executor(None,
                                            partial(requests.request,
                                                    method=request.method,
@@ -52,7 +53,13 @@ class Crawler(object):
         logger.debug('[%d] Scraped from %s' % (r.status_code, r.url))
         # 传递meta
         r.meta = request.meta
-        results = request.callback(r)
+        # r.xpath = XpathSelector(raw_text=r.text)
+        try:
+            results = request.callback(r)
+        except Exception:
+            # logger.error(e)
+            raise
+            # return
         if not isinstance(results, types.GeneratorType):
             return
         # 检测结果，如果是Request，则添加到requests列表中准备继续请求，否则执行结果回调函数
@@ -62,7 +69,7 @@ class Crawler(object):
             elif self.result_callback:
                 self.result_callback(x)
 
-    def run(self):
+    def _run(self):
         # 如果requests列表中还有Request实例，则继续请求
         while self.requests:
             tasks = [self.get_html(req) for req in self.requests]
@@ -72,4 +79,9 @@ class Crawler(object):
 
     def stop(self):
         self.loop.close()
+        print('crawler stopped')
         logging.debug('crawler stopped')
+
+    def run(self):
+        self._run()
+        self.stop()
