@@ -33,7 +33,6 @@ def process_result(result):
 reqs = [async_request.Request(url='https://www.baidu.com', callback=parse_baidu)]
 c = async_request.Crawler(reqs, result_callback=process_result)
 c.run()
-c.stop()
 ```
 And you'll see the result like this:
 ```
