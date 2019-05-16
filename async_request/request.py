@@ -3,8 +3,7 @@ Request
 '''
 import random
 
-class Request(object):
-    user_agents = [
+USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36',
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/64.0.3282.140 Safari/537.36 Edge/18.17763',
@@ -18,6 +17,8 @@ class Request(object):
         'Mozilla/5.0 (Windows NT 5.1; U; en; rv:1.8.1) Gecko/20061208 Firefox/2.0.0 Opera 9.50',
         'Mozilla/5.0 (Windows NT 6.1; WOW64; rv:34.0) Gecko/20100101 Firefox/34.0',
     ]
+
+class Request(object):
 
     def __init__(self, url, headers=None, retry_times=3,
                  timeout=5, callback=None, meta=None,
@@ -43,6 +44,11 @@ class Request(object):
             return {
                 'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
                 'Accept-Language': 'en',
-                'User-Agent': random.choice(self.user_agents)
+                'User-Agent': random.choice(USER_AGENTS)
             }
         return self._headers
+
+class FormRquest(Request):
+
+    def __init__(self, url, method='POST', *args, **kwargs):
+        super().__init__(url=url, method=method, *args, **kwargs)
