@@ -78,7 +78,6 @@ class Crawler(object):
 
     def stop(self):
         self.loop.close()
-        print('crawler stopped')
         logging.debug('crawler stopped')
 
     def run(self):
