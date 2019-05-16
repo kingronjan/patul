@@ -1,6 +1,11 @@
 # async-request
 A lightweight network request framework based on requests & asyncio
 
+## install
+```shell
+pip install async_request
+```
+
 ## usage
 ```python
 import async_request
