@@ -5,9 +5,11 @@ import types
 from functools import partial
 from .request import Request
 
+logging.basicConfig(level='DEBUG')
+
 class Crawler(object):
 
-    def __init__(self, requests, result_callback=None, logger=None):
+    def __init__(self, requests, result_callback=None):
         '''
         初始化crawler
         :param requests: Request请求列表
@@ -17,10 +19,9 @@ class Crawler(object):
         self.requests = requests
         self.loop = asyncio.get_event_loop()
         self.result_callback = result_callback
-        self.logger = logger if logger else logging.getLogger('Crawler')
 
     async def get_html(self, request):
-        self.logger.debug('Crawling {}'.format(request.url))
+        logging.debug('Crawling {}'.format(request.url))
         future = self.loop.run_in_executor(None,
                                            partial(requests.request,
                                                    method=request.method,
@@ -37,16 +38,16 @@ class Crawler(object):
                 r = await future
                 break
             except Exception as e:
-                self.logger.info('Error happen when crawling %s' % request.url)
-                self.logger.error(e)
+                logging.info('Error happen when crawling %s' % request.url)
+                logging.error(e)
                 request.retry_times -= 1
-                self.logger.info('Retrying %s' % request.url)
+                logging.info('Retrying %s' % request.url)
         else:
-            self.logger.info('Gave up retry %s, total retry %d times' % (request.url, request.retry_times + 1))
+            logging.info('Gave up retry %s, total retry %d times' % (request.url, request.retry_times + 1))
             r = requests.Response()
             r.status_code, r.url = 404, request.url
 
-        self.logger.debug('[%d] Scraped from %s' % (r.status_code, r.url))
+        logging.debug('[%d] Scraped from %s' % (r.status_code, r.url))
         # 传递meta
         r.meta = request.meta
         results = request.callback(r)
@@ -69,4 +70,4 @@ class Crawler(object):
 
     def stop(self):
         self.loop.close()
-        self.logger.debug('crawler stopped')
+        logging.debug('crawler stopped')
