@@ -1,1 +1,2 @@
-from .crawler import Crawler, Request
+from .crawler import Crawler
+from .request import Request, FormRquest
