@@ -81,5 +81,7 @@ class Crawler(object):
         logging.debug('crawler stopped')
 
     def run(self):
-        self._run()
-        self.stop()
+        try:
+            self._run()
+        finally:
+            self.stop()
