@@ -7,6 +7,8 @@ import types
 from functools import partial
 from .request import Request
 
+logger = logging.getLogger('async_request.Crawler')
+
 class Crawler(object):
 
     def __init__(self, requests, result_callback=None):
@@ -38,16 +40,16 @@ class Crawler(object):
                 r = await future
                 break
             except Exception as e:
-                logging.info('Error happen when crawling %s' % request.url)
-                logging.error(e)
+                logger.info('Error happen when crawling %s' % request.url)
+                logger.error(e)
                 request.retry_times -= 1
-                logging.info('Retrying %s' % request.url)
+                logger.info('Retrying %s' % request.url)
         else:
-            logging.info('Gave up retry %s, total retry %d times' % (request.url, request.retry_times + 1))
+            logger.info('Gave up retry %s, total retry %d times' % (request.url, request.retry_times + 1))
             r = requests.Response()
             r.status_code, r.url = 404, request.url
 
-        logging.debug('[%d] Scraped from %s' % (r.status_code, r.url))
+        logger.debug('[%d] Scraped from %s' % (r.status_code, r.url))
         # 传递meta
         r.meta = request.meta
         results = request.callback(r)
