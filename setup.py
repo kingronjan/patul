@@ -4,10 +4,11 @@ from setuptools import setup, find_packages
 
 setup(
     name='async-request',
-    version=0.13,
+    version=0.14,
     description=(
         'A lightweight network request framework'
     ),
+    long_description_content_type='text/markdown',
     long_description=open('README.md').read(),
     author='financial',
     author_email='1012593988@qq.com',
