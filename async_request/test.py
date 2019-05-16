@@ -1,5 +1,5 @@
 from async_request import Request, Crawler
-
+#
 def parse_baidu(response):
     print(response.url, response.status_code)
     yield Request('https://cn.bing.com/', callback=parse_bing)
