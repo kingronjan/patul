@@ -1,11 +1,11 @@
+# coding=utf-8
+
 import asyncio
 import logging
 import requests
 import types
 from functools import partial
 from .request import Request
-
-logging.basicConfig(level='DEBUG')
 
 class Crawler(object):
 
