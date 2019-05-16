@@ -56,10 +56,9 @@ class Crawler(object):
         # r.xpath = XpathSelector(raw_text=r.text)
         try:
             results = request.callback(r)
-        except Exception:
-            # logger.error(e)
-            raise
-            # return
+        except Exception as e:
+            logger.error(e)
+            return
         if not isinstance(results, types.GeneratorType):
             return
         # 检测结果，如果是Request，则添加到requests列表中准备继续请求，否则执行结果回调函数
