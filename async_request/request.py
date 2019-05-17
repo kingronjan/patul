@@ -22,23 +22,29 @@ USER_AGENTS = [
 
 class Request(object):
 
-    def __init__(self, url, headers=None, retry_times=3,
+    def __init__(self, url, params=None, headers=None, retry_times=3,
                  timeout=5, callback=None, meta=None,
-                 cookies=None, proxies=None, data=None, json=None, method='GET'):
+                 cookies=None, proxies=None, method='GET', **kwargs):
         '''
-        因为是基于requests的，所以这些参数都是直接作为关键字参数传递给requests.request方法
+        Request object
+        :param url: request url
         '''
         self.url = url
         self._headers = headers
         self.retry_times = retry_times
-        self.timeout = timeout
         self.callback = callback
         self.meta = meta or dict()
-        self.cookies = cookies
-        self.proxies = proxies
-        self.data = data
-        self.json = json
-        self.method = method
+        # it will as a kwargs send to requests.request
+        self.params = dict(
+            url=url,
+            params=params,
+            headers=self.headers,
+            method=method,
+            timeout=timeout,
+            cookies=cookies,
+            proxies=proxies,
+            **kwargs
+        )
 
     @property
     def headers(self):
@@ -52,5 +58,15 @@ class Request(object):
 
 class FormRquest(Request):
 
-    def __init__(self, url, method='POST', *args, **kwargs):
-        super().__init__(url=url, method=method, *args, **kwargs)
+    def __init__(self, url, data=None, json=None, method='POST',
+                 callback=None, meta=None, retry_times=3, headers=None, **kwargs):
+        super().__init__(url=url, method=method, callback=callback,
+                         meta=meta, retry_times=retry_times, headers=headers, **kwargs)
+        self.params = dict(
+            url=url,
+            method=method,
+            headers=self.headers,
+            data=data,
+            json=json,
+            **kwargs
+        )
