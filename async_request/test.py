@@ -1,12 +1,13 @@
-from async_request import Request, Crawler
-#
+import async_request as ar
+
 def parse_baidu(response):
     print(response.url, response.status_code)
-    yield Request('https://cn.bing.com/', callback=parse_bing)
+    yield ar.Request('https://cn.bing.com/', callback=parse_bing)
 
 def parse_bing(response):
     print(response.url, response.status_code)
-    yield Request('https://github.com/financialfly/async-request', callback=parse_github)
+    print(response.xpath('//a/@href').get())
+    yield ar.Request('https://github.com/financialfly/async-request', callback=parse_github)
 
 def parse_github(response):
     print(response.url, response.status_code)
@@ -15,6 +16,5 @@ def parse_github(response):
 def process_result(result):
     print(result)
 
-c = Crawler([Request(url='https://www.baidu.com', callback=parse_baidu)], result_callback=process_result)
-c.run()
-c.stop()
+request_list = [ar.Request(url='https://www.baidu.com', callback=parse_baidu)]
+ar.crawl(request_list, result_callback=process_result)
