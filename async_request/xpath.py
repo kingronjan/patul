@@ -17,6 +17,6 @@ class XpathSelector(object):
 
     def __call__(self, syntax):
         self.syntax = syntax
-        if not self.html:
-            self.html = etree.HTML((self._text))
+        if self.html is None:
+            self.html = etree.HTML(self._text)
         return self
