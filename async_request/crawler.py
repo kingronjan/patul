@@ -64,7 +64,7 @@ class Crawler(object):
             while self.requests:
                 tasks = [self.get_html(req) for req in self.requests]
                 # clean the request list
-                self.requests = list()
+                self.requests.clear()
                 self.loop.run_until_complete(asyncio.gather(*tasks))
         finally:
             if close_eventloop:
