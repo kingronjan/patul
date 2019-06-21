@@ -35,6 +35,7 @@ class Request(object):
         self.callback = callback
         self.meta = meta or dict()
         # it will as a kwargs send to requests.request
+        kwargs.setdefault('allow_redirects', True)
         self.params = dict(
             url=url,
             params=params,
