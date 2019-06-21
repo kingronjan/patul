@@ -6,7 +6,7 @@ import requests
 import types
 from functools import partial
 from .request import Request
-from .xpath import XpathSelector
+from .xpath import Xpath
 
 logger = logging.getLogger('async_request.Crawler')
 
@@ -44,7 +44,7 @@ class Crawler(object):
         # set meta
         response.meta = request.meta
         # set xpath
-        response.xpath = XpathSelector(raw_text=response.text)
+        response.xpath = Xpath(response.text)
         try:
             results = request.callback(response)
         except Exception as e:
