@@ -42,3 +42,18 @@ javascript:void(0)
 https://github.com/financialfly/async-request 200
 {'hello': 'github'}
 ```
+
+test
+----
+You can test your spider like this:
+```python
+import async_request as ar
+
+@ar.test('https://www.baidu.com')
+def parse_baidu_test(response):
+    print(response.url, response.status_code)
+```
+then run the script:
+```
+https://www.baidu.com/ 200
+```
