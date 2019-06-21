@@ -8,7 +8,10 @@ class XpathSelector(object):
 
     def get(self):
         try:
-            return self.html.xpath(self.syntax)[0]
+            result = self.html.xpath(self.syntax)[0]
+            if isinstance(result, etree._Element):
+                result = etree.tostring(result, encoding='utf-8').decode('utf-8')
+            return result
         except IndexError:
             return None
 
