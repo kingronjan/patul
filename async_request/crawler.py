@@ -3,7 +3,10 @@
 import asyncio
 import logging
 import requests
+import sys
 import types
+import traceback
+
 from functools import partial
 from .request import Request
 from .xpath import Xpath
@@ -48,7 +51,8 @@ class Crawler(object):
         try:
             results = request.callback(response)
         except Exception as e:
-            logger.error(e)
+            exc_type, exc_value, exc_traceback_obj = sys.exc_info()
+            traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=2)
             return
         if not isinstance(results, types.GeneratorType):
             return
