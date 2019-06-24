@@ -1,5 +1,6 @@
 import re
 from async_request.xpath import Xpath
+from urllib.parse import urljoin
 
 class Response(object):
 
@@ -26,3 +27,6 @@ class Response(object):
 
     def _set_xpath(self):
         self.xpath = Xpath(self.text)
+
+    def urljoin(self, url):
+        return urljoin(self.url, url)
