@@ -4,6 +4,7 @@
 Request
 '''
 import random
+from requests.cookies import RequestsCookieJar
 
 USER_AGENTS = [
         'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:65.0) Gecko/20100101 Firefox/65.0',
@@ -31,6 +32,7 @@ class Request(object):
         '''
         self.url = url
         self._headers = headers
+        self._cookies = cookies
         self.retry_times = retry_times
         self.callback = callback
         self.meta = meta or dict()
@@ -42,7 +44,7 @@ class Request(object):
             headers=self.headers,
             method=method,
             timeout=timeout,
-            cookies=cookies,
+            cookies=self.cookies,
             proxies=proxies,
             **kwargs
         )
@@ -56,6 +58,15 @@ class Request(object):
                 'User-Agent': random.choice(USER_AGENTS)
             }
         return self._headers
+
+    @property
+    def cookies(self):
+        if isinstance(self._cookies, list):
+            jar = RequestsCookieJar()
+            for c in self._cookies:
+                jar.set(c['name'], c['value'], domains=c['domains'], path=c['path'])
+            return jar
+        return self._cookies
 
 class FormRquest(Request):
 
