@@ -9,7 +9,7 @@ import traceback
 
 from functools import partial
 from .request import Request
-from .xpath import Xpath
+from .response import Response
 
 logger = logging.getLogger('async_request.Crawler')
 
@@ -44,10 +44,7 @@ class Crawler(object):
             response.status_code, response.url = 404, request.url
 
         logger.debug('[%d] Scraped from %s' % (response.status_code, response.url))
-        # set meta
-        response.meta = request.meta
-        # set xpath
-        response.xpath = Xpath(response.text)
+        response = Response(response, request)
         try:
             results = request.callback(response)
         except Exception as e:
@@ -56,7 +53,7 @@ class Crawler(object):
             return
         if not isinstance(results, types.GeneratorType):
             return
-        # if Request is results, keep request
+        # if results include Request, keep request
         for x in results:
             if isinstance(x, Request):
                 self.requests.append(x)
