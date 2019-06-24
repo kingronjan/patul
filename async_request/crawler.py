@@ -34,8 +34,7 @@ class Crawler(object):
                 response = await future
                 break
             except Exception as e:
-                logger.info('Error happen when crawling %s' % request.url)
-                logger.error(e)
+                logger.info('Request %s error cause by %s' % (request.url, str(e)))
                 request.retry_times -= 1
                 logger.info('Retrying %s' % request.url)
         else:
@@ -48,8 +47,7 @@ class Crawler(object):
         try:
             results = request.callback(response)
         except Exception as e:
-            exc_type, exc_value, exc_traceback_obj = sys.exc_info()
-            traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=2)
+            self._trace_error()
             return
         if not isinstance(results, types.GeneratorType):
             return
@@ -59,6 +57,10 @@ class Crawler(object):
                 self.requests.append(x)
             elif self.result_callback:
                 self.result_callback(x)
+
+    def _trace_error(self):
+        exc_type, exc_value, exc_traceback_obj = sys.exc_info()
+        traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=2)
 
     def run(self, close_eventloop=True):
         try:
