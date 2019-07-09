@@ -16,5 +16,6 @@ def parse_github(response):
 def process_result(result):
     print(result)
 
-request_list = [ar.Request(url='https://www.baidu.com', callback=parse_baidu)]
-ar.crawl(request_list, result_callback=process_result)
+if __name__ == '__main__':
+    request_list = [ar.Request(url='https://www.baidu.com', callback=parse_baidu)]
+    ar.crawl(request_list, result_callback=process_result)
