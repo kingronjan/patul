@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='async-request',
-    version=0.16,
+    version=0.161,
     description=(
         'A lightweight network request framework'
     ),
@@ -25,7 +25,6 @@ setup(
         'License :: OSI Approved :: BSD License',
         'Programming Language :: Python',
         'Programming Language :: Python :: Implementation',
-        'Programming Language :: Python :: 3.4',
         'Programming Language :: Python :: 3.5',
         'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
@@ -33,6 +32,6 @@ setup(
     ],
     install_requires=[
             'requests>=2.14.0',
-            'lxml>=4.2.5'
+            'parsel>=1.5.1'
         ]
 )
