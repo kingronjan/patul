@@ -1,8 +1,10 @@
 import re
 from urllib.parse import urljoin
+
 from parsel import Selector
 
 _default_coding = 'utf-8'
+
 
 class Response(object):
 

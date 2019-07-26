@@ -2,16 +2,18 @@
 
 import asyncio
 import logging
-import requests
 import sys
-import types
 import traceback
-
+import types
 from functools import partial
+
+import requests
+
 from .request import Request
 from .response import Response
 
 logger = logging.getLogger('async_request.Crawler')
+
 
 class Crawler(object):
 
