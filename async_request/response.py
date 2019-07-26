@@ -1,6 +1,6 @@
 import re
-from async_request.xpath import Xpath
 from urllib.parse import urljoin
+from parsel import Selector
 
 _default_coding = 'utf-8'
 
@@ -36,10 +36,17 @@ class Response(object):
         self._text = text
         return self._text
 
-    def xpath(self, syntax):
-        if not hasattr(self, '_xpath_selector'):
-            self._xpath_selector = Xpath(self.text)
-        return self._xpath_selector(syntax)
+    @property
+    def selector(self):
+        if not hasattr(self, '_selector'):
+            self._selector = Selector(text=self.text)
+        return self._selector
+
+    def xpath(self, query, **kw):
+        return self.selector.xpath(query, **kw)
+
+    def css(self, query):
+        return self.selector.css(query)
 
     def urljoin(self, url):
         return urljoin(self.url, url)
