@@ -13,18 +13,18 @@ pip install async_request
 usage
 -----
 ```python
-import async_request as ar
+from async_request import Request, crawl
 
 
 def parse_baidu(response):
     print(response.url, response.status_code)
-    yield ar.Request('https://cn.bing.com/', callback=parse_bing)
+    yield Request('https://cn.bing.com/', callback=parse_bing)
 
 
 def parse_bing(response):
     print(response.url, response.status_code)
     print(response.xpath('//a/@href').get())
-    yield ar.Request('https://github.com/financialfly/async-request', callback=parse_github)
+    yield Request('https://github.com/financialfly/async-request', callback=parse_github)
 
 
 def parse_github(response):
@@ -37,8 +37,8 @@ def process_result(result):
 
 
 if __name__ == '__main__':
-    request_list = [ar.Request(url='https://www.baidu.com', callback=parse_baidu)]
-    ar.crawl(request_list, result_callback=process_result)
+    request_list = [Request(url='https://www.google.com', callback=parse_baidu)]
+    crawl(request_list, result_callback=process_result)
 ```
 And you'll see the result like this:
 ```
@@ -51,7 +51,24 @@ https://github.com/financialfly/async-request 200
 
 test
 ----
-You can test your spider like this:
+Use `fetch` function to get a response immediately:
+```python
+from async_request import fetch
+
+def parse():
+    response = fetch('https://www.bing.com')
+    print(response)
+    
+   
+if __name__ == '__main__':
+    parse()
+```
+the output will like this:
+```
+<async_request.Response 200 https://cn.bing.com/>
+```
+
+Use the `test` decorator is also a method to test spider:
 ```python
 import async_request as ar
 
