@@ -17,26 +17,27 @@ logger = logging.getLogger('async_request.Crawler')
 
 class Crawler(object):
 
-    def __init__(self, requests, result_callback=None):
+    def __init__(self, reqs, result_callback=None):
         '''
         init crawler
-        :param requests: Request list
+        :param reqs: Request list
         :param result_callback: callback when the result is came out
         :param loop: event loop
         '''
-        self.requests = requests
+        self.requests = reqs
         self.loop = asyncio.get_event_loop()
         self.result_callback = result_callback
+        self.session = requests.Session()
 
     async def get_html(self, request):
         logger.debug('Crawling {}'.format(request.url))
-        future = self.loop.run_in_executor(None, partial(requests.request, **request.params))
+        future = self.loop.run_in_executor(None, partial(self.session.request, **request.params))
         while request.retry_times >= 0:
             try:
                 response = await future
                 break
             except Exception as e:
-                logger.info('Request %s error cause by %s' % (request.url, str(e)))
+                self._trace_error()
                 request.retry_times -= 1
                 logger.info('Retrying %s' % request.url)
         else:
@@ -64,7 +65,7 @@ class Crawler(object):
         exc_type, exc_value, exc_traceback_obj = sys.exc_info()
         traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=2)
 
-    def run(self, close_eventloop=True):
+    def run(self):
         try:
             while self.requests:
                 tasks = [self.get_html(req) for req in self.requests]
@@ -72,6 +73,5 @@ class Crawler(object):
                 self.requests.clear()
                 self.loop.run_until_complete(asyncio.gather(*tasks))
         finally:
-            if close_eventloop:
-                self.loop.close()
-                logger.debug('crawler stopped')
+            self.session.close()
+            logger.debug('crawler stopped')
