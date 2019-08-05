@@ -8,12 +8,15 @@ class Response(object):
 
     def __init__(self, response, request):
         self._response = response
-        self.content = response.content
-        self.url = response.url
         self.request = request
 
     def __getattr__(self, item):
         return getattr(self._response, item)
+
+    def __str__(self):
+        return '<async_request.Response {} {}>'.format(self.status_code, self.url)
+
+    __repr__ = __str__
 
     @property
     def meta(self):
