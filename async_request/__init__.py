@@ -1,4 +1,4 @@
-from .crawler import Crawler, partial
+from .crawler import Crawler
 from .request import Request, FormRquest
 
 
@@ -6,9 +6,10 @@ def crawl(requests, result_callback=None, stop_after_crawled=True):
     c = Crawler(reqs=requests, result_callback=result_callback)
     c.run()
     if stop_after_crawled:
-        c.loop.close()
+        c.close()
 
 
+__crawler = None
 def test(url_or_request, **request_kw):
     """A decorator to test request
     Usage:
@@ -26,9 +27,15 @@ def test(url_or_request, **request_kw):
             raise TypeError("Can't assign the callback argument to a test decorator")
         url_or_request = Request(url_or_request, **request_kw)
 
+    global __crawler
+    if __crawler is None:
+        __crawler = Crawler([])
+
     def test(func):
         url_or_request.callback = func
-        return partial(crawl, requests=[url_or_request], stop_after_crawled=False)
+        __crawler.requests.append(url_or_request)
+        return __crawler.run
+        # return partial(crawl, requests=[url_or_request], stop_after_crawled=False)
     return test
 
 
