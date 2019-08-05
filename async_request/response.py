@@ -3,15 +3,12 @@ from urllib.parse import urljoin
 
 from parsel import Selector
 
-_default_coding = 'utf-8'
-
 
 class Response(object):
 
     def __init__(self, response, request):
         self._response = response
         self.content = response.content
-        self.status = response.status_code
         self.url = response.url
         self.request = request
 
@@ -32,9 +29,9 @@ class Response(object):
             try:
                 text = self.content.decode(charset)
             except:
-                text = self.content.decode(_default_coding)
+                return self._response.text
         else:
-            text = self.content.decode(_default_coding)
+            return self._response.text
         self._text = text
         return self._text
 
