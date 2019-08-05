@@ -35,7 +35,6 @@ def test(url_or_request, **request_kw):
         url_or_request.callback = func
         __crawler.requests.append(url_or_request)
         return __crawler.run
-        # return partial(crawl, requests=[url_or_request], stop_after_crawled=False)
     return test
 
 
