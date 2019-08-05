@@ -66,12 +66,15 @@ class Crawler(object):
         traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=2)
 
     def run(self):
-        try:
-            while self.requests:
-                tasks = [self.get_html(req) for req in self.requests]
-                # clean the request list
-                self.requests.clear()
-                self.loop.run_until_complete(asyncio.gather(*tasks))
-        finally:
-            self.session.close()
-            logger.debug('crawler stopped')
+        while self.requests:
+            tasks = [self.get_html(req) for req in self.requests]
+            # clean the request list
+            self.requests.clear()
+            self.loop.run_until_complete(asyncio.gather(*tasks))
+
+    def close(self):
+        self.session.close()
+        self.loop.close()
+
+    def __del__(self):
+        self.close()
