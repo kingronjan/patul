@@ -37,7 +37,7 @@ class Request(object):
         self._cookies = cookies
         self.retry_times = retry_times
         self.callback = callback
-        self.meta = meta or dict()
+        self.meta = meta or {}
         # it will as a kwargs send to requests.request
         kwargs.setdefault('allow_redirects', True)
         self.params = dict(
@@ -70,6 +70,11 @@ class Request(object):
             return jar
         return self._cookies
 
+    def __str__(self):
+        return '<async_request.Request {}>'.format(self.url)
+
+    __repr__ = __str__
+
 
 class FormRquest(Request):
 
@@ -85,3 +90,8 @@ class FormRquest(Request):
             json=json,
             **kwargs
         )
+
+    def __str__(self):
+        return '<async_request.FormRequest {}>'.format(self.url)
+
+    __repr__ = __str__
