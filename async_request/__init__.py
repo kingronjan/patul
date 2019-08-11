@@ -2,8 +2,8 @@ from .crawler import Crawler
 from .request import Request, FormRquest
 
 
-def crawl(requests, result_callback=None, handle_cookies=True, download_delay=0, stop_after_crawled=True):
-    c = Crawler(requests, result_callback, handle_cookies, download_delay)
+def crawl(requests, stop_after_crawled=True, **kwargs):
+    c = Crawler(requests, **kwargs)
     c.run()
     if stop_after_crawled:
         c.close()
