@@ -8,7 +8,7 @@ import types
 from functools import partial
 
 import requests
-from requests.exceptions import ConnectionError, ProxyError, ConnectTimeout
+from requests.exceptions import ConnectionError, ProxyError, ConnectTimeout, ReadTimeout
 
 from .request import Request
 from .response import Response
@@ -39,12 +39,12 @@ class Crawler(object):
                 await asyncio.sleep(self.download_delay)
                 response = await future
                 break
-            except (ConnectTimeout, ConnectionError, ProxyError) as e:
+            except (ConnectTimeout, ConnectionError, ProxyError, ReadTimeout) as e:
                 logger.error(e)
             except Exception as e:
                 self._trace_error()
-                request.retry_times -= 1
-                logger.info('Retrying %s' % request.url)
+            request.retry_times -= 1
+            logger.info('Retrying %s' % request.url)
         else:
             logger.info('Gave up retry %s, total retry %d times' % (request.url, request.retry_times + 1))
             return
