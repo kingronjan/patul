@@ -9,7 +9,7 @@ def crawl(requests, stop_after_crawled=True, **kwargs):
         c.close()
 
 
-__crawler = None
+_crawler = None
 def test(url_or_request, **request_kw):
     """A decorator to test request
     Usage:
@@ -27,14 +27,14 @@ def test(url_or_request, **request_kw):
             raise TypeError("Can't assign the callback argument to a test decorator")
         url_or_request = Request(url_or_request, **request_kw)
 
-    global __crawler
-    if __crawler is None:
-        __crawler = Crawler([])
+    global _crawler
+    if _crawler is None:
+        _crawler = Crawler()
 
     def test(func):
         url_or_request.callback = func
-        __crawler.requests.append(url_or_request)
-        return __crawler.run
+        _crawler.add_request(url_or_request)
+        return _crawler.run
     return test
 
 
