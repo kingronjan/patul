@@ -56,7 +56,9 @@ class Crawler(object):
         traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=3)
 
     def process_output(self, result):
-        if isinstance(result, Request):
+        if result is None:
+            return
+        elif isinstance(result, Request):
             self.queue.put_nowait(result)
         elif self.result_back:
             self.result_back(result)
