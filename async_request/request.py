@@ -25,7 +25,7 @@ USER_AGENTS = [
 
 class Request(object):
 
-    def __init__(self, url, params=None, headers=None, retry_times=3,
+    def __init__(self, url, params=None, headers=None,
                  timeout=5, callback=None, meta=None,
                  cookies=None, proxies=None, method='GET', **kwargs):
         '''
@@ -33,23 +33,29 @@ class Request(object):
         :param url: request url
         '''
         self.url = url
+        self.params = params
         self._headers = headers
         self._cookies = cookies
-        self.retry_times = retry_times
+        self.timeout = timeout
+        self.proxies = proxies
+        self.method = method
         self.callback = callback
         self.meta = meta or {}
-        # it will as a kwargs send to requests.request
         kwargs.setdefault('allow_redirects', True)
-        self.params = dict(
-            url=url,
-            params=params,
-            headers=self.headers,
-            method=method,
-            timeout=timeout,
-            cookies=self.cookies,
-            proxies=proxies,
+        # it will as a kwargs send to requests.request
+        self.request_kwargs = self._form_kwargs(**kwargs)
+
+    def _form_kwargs(self, **kwargs):
+        return {
+            'url': self.url,
+            'params': self.params,
+            'headers': self.headers,
+            'cookies': self.cookies,
+            'timeout': self.timeout,
+            'proxies': self.proxies,
+            'method': self.method,
             **kwargs
-        )
+        }
 
     @property
     def headers(self):
@@ -73,25 +79,19 @@ class Request(object):
     def __str__(self):
         return '<async_request.Request {}>'.format(self.url)
 
-    __repr__ = __str__
-
 
 class FormRquest(Request):
 
-    def __init__(self, url, data=None, json=None, method='POST',
-                 callback=None, meta=None, retry_times=3, headers=None, **kwargs):
-        super().__init__(url=url, method=method, callback=callback,
-                         meta=meta, retry_times=retry_times, headers=headers, **kwargs)
-        self.params = dict(
-            url=url,
-            method=method,
-            headers=self.headers,
-            data=data,
-            json=json,
-            **kwargs
-        )
+    def __init__(self, url, data=None, json=None, method='POST', **kwargs):
+        self.data = data
+        self.json = json
+        super().__init__(url=url, method=method, **kwargs)
+
+    def _form_kwargs(self, **kwargs):
+        kw = super()._form_kwargs(**kwargs)
+        kw['data'] = self.data
+        kw['json'] = self.json
+        return kw
 
     def __str__(self):
         return '<async_request.FormRequest {}>'.format(self.url)
-
-    __repr__ = __str__
