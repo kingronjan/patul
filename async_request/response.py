@@ -38,6 +38,9 @@ class Response(object):
         self._text = text
         return self._text
 
+    def recoding_text(self, encoding):
+        self._text = self.content.decode(encoding)
+
     @property
     def selector(self):
         if not hasattr(self, '_selector'):
