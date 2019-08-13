@@ -25,7 +25,7 @@ class Crawler(object):
                  max_retries=3,
                  priority=1,
                  event_loop=None,
-                 queuesize=100):
+                 queuesize=0):
         '''
         :param reqs: Request list
         :param result_back: function to process the result
@@ -62,8 +62,7 @@ class Crawler(object):
         except asyncio.queues.QueueFull:
             async def add_request():
                 await self._queue.put(request)
-            loop = asyncio.get_running_loop()
-            loop.create_task(add_request())
+            self._loop.create_task(add_request())
 
     def next_request(self):
         return self._queue.get_nowait()
@@ -110,9 +109,8 @@ class Crawler(object):
         return response
 
     async def crawl(self, request):
-        loop = asyncio.get_running_loop()
         await asyncio.sleep(self.download_delay)
-        response = await loop.run_in_executor(None, self.download, request)
+        response = await self._loop.run_in_executor(None, self.download, request)
         if not response:
             return
         results = request.callback(response)
