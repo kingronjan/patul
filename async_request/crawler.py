@@ -15,36 +15,51 @@ logger = logging.getLogger('async_request.Crawler')
 
 
 class Crawler(object):
-
-    def __init__(self, reqs=None,
-                 result_back=None,
-                 error_back=None,
-                 handle_cookies=True,
-                 download_delay=0,
-                 concurrent_requests=10,
-                 max_retries=3,
-                 priority=1,
-                 event_loop=None,
-                 queuesize=100):
-        '''
-        :param reqs: Request list
-        :param result_back: function to process the result
-        :param error_back: callback when error happen
-        :param handle_cookies: handle the cookies or not
-        :param download_delay: delayed time before download
-        :param concurrent_requests: max concurrent requests
-        :param priority: -1: first in first out, breadth-first
-                          1: last in first out, depth-first
-        :param event_loop: async event loop
-        '''
+    '''
+    @reqs
+        list of instance of Request
+        type: list
+    @result_back
+        callback when result came out
+        accept argument: result
+    @error_back
+        callback when errors
+        accept arguments: exception, request
+    @handle_cookies
+        if it's True (default is True)
+        crawler will use requests.Session to handle cookies
+    @download_delay
+        delayed time before download
+    @concurrent_requests
+        max concurrent requests
+        type: int
+    @max_retries
+        max_retries
+        type: int
+    @priority
+        -1: first in first out, breadth-first
+         1: last in first out, depth-first
+    @event_loop
+        async event loop
+    '''
+    def __init__(
+            self,
+            reqs=None,
+            result_back=None,
+            error_back=None,
+            handle_cookies=True,
+            download_delay=0,
+            concurrent_requests=10,
+            max_retries=3,
+            priority=1,
+            event_loop=None
+        ):
         if priority == -1:
-            self._queue = asyncio.Queue(queuesize)
+            self._request_queue = asyncio.Queue()
         elif priority == 1:
-            self._queue = asyncio.LifoQueue(queuesize)
+            self._request_queue = asyncio.LifoQueue()
         else:
-            raise ValueError('Argument priority expect 1 or -1, got {}'.format(priority))
-        for req in reqs or []:
-            self.add_request(req)
+            raise ValueError(f'Argument priority expect 1 or -1, got {priority}')
         if handle_cookies:
             self.session = requests.Session()
         else:
@@ -54,19 +69,18 @@ class Crawler(object):
         self.download_delay = download_delay
         self.concurrent_requests = concurrent_requests
         self.max_retries = max_retries
-        self._loop = event_loop or asyncio.get_event_loop()
+        self.loop = event_loop or asyncio.get_event_loop()
+        for req in reqs or []:
+            self.add_request(req)
 
     def add_request(self, request):
-        try:
-            self._queue.put_nowait(request)
-        except asyncio.queues.QueueFull:
-            async def add_request():
-                await self._queue.put(request)
-            loop = asyncio.get_running_loop()
-            loop.create_task(add_request())
+        self._request_queue.put_nowait(request)
 
     def next_request(self):
-        return self._queue.get_nowait()
+        try:
+            return self._request_queue.get_nowait()
+        except asyncio.queues.QueueEmpty:
+            return None
 
     def process_exception(self, e, request):
         if self.error_back:
@@ -77,13 +91,13 @@ class Crawler(object):
             exc_type, exc_value, exc_traceback_obj = sys.exc_info()
             traceback.print_exception(exc_type, exc_value, exc_traceback_obj, limit=3)
 
-    def process_output(self, result):
+    async def process_output(self, result):
         if result is None:
             return
         elif isinstance(result, Request):
             self.add_request(result)
         elif self.result_back:
-            self.result_back(result)
+            await self.loop.run_in_executor(None, self.result_back, result)
 
     def retry(self, request):
         retry_times = request.meta.get('retry_times', 0)
@@ -94,19 +108,17 @@ class Crawler(object):
         if retry_times < max_retries:
             retry_times += 1
             request.meta['retry_times'] = retry_times
-            logger.debug('Prepare to retry {}'.format(request))
             self.add_request(request)
         else:
             logger.debug('Gave up retry {}'.format(request))
 
     def download(self, request):
-        logger.debug('Requesting {}'.format(request))
         try:
             response = self.session.request(**request.request_kwargs)
         except Exception as e:
             return self.process_exception(e, request)
         response = Response(response, request)
-        logger.debug('Requested {}'.format(response))
+        logger.debug(f'Requested {response}')
         return response
 
     async def crawl(self, request):
@@ -121,28 +133,30 @@ class Crawler(object):
         try:
             results = iter(results)
         except TypeError:
-            logger.warning('Except an iterable object, got {}'.format(type(results)))
+            logger.warning(f'Except an iterable object, got {type(results)}')
         else:
             for x in results:
-                self.process_output(x)
+                await self.process_output(x)
 
-    async def start_crawl(self):
+    async def _run(self):
+
         def iter_task():
-            try:
-                for i in range(self.concurrent_requests):
-                    yield self.crawl(self.next_request())
-            except asyncio.queues.QueueEmpty:
-                return
-        await asyncio.gather(*iter_task())
+            for i in range(self.concurrent_requests):
+                req = self.next_request()
+                if req is None:
+                    break
+                yield self.crawl(req)
+
+        while self._request_queue.qsize():
+            await asyncio.gather(*iter_task())
 
     def run(self):
-        while self._queue.qsize():
-            self._loop.run_until_complete(self.start_crawl())
+        self.loop.run_until_complete(self._run())
 
     def close(self):
         if isinstance(self.session, requests.Session):
             self.session.close()
-        self._loop.close()
+        self.loop.close()
 
     def __del__(self):
         self.close()
