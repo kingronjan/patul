@@ -37,6 +37,22 @@ if __name__ == '__main__':
     # Run spider
     MySpider().run()
 ```
+More detail controls like: handle cookies, download delay, concurrent requests, max retries, logs settings and etc. just send to the `__init__` method of spider (see `Crawler` to known all keyword arguments):
+```python
+from async_request import AsyncSpider
+
+class MySpider(AsyncSpider):
+    ...
+
+if __name__ == '__main__':
+    MySpider(
+        handle_cookies=True, 
+        download_delay=0,
+        concurrent_requests=10,
+        max_retries=3,
+        log_file='spider.log'
+    ).run()
+```
 
 test
 ----

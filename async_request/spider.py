@@ -6,8 +6,9 @@ class AsyncSpider(object):
 
     start_urls = None
 
-    def __init__(self):
-        self.crawler = Crawler(result_back=self.process_result)
+    def __init__(self, **kwargs):
+        kwargs.setdefault('result_back', self.process_result)
+        self.crawler = Crawler(**kwargs)
 
     def start_request(self):
         for url in self.start_urls or []:

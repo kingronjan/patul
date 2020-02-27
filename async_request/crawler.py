@@ -23,7 +23,6 @@ class Crawler(object):
     def __init__(self,
                  requests=None,
                  result_back=None,
-                 error_back=None,
                  handle_cookies=True,
                  download_delay=0,
                  concurrent_requests=10,
@@ -35,7 +34,6 @@ class Crawler(object):
         """
         :param requests: Request list
         :param result_back: function to process the result
-        :param error_back: callback when error happen
         :param handle_cookies: handle the cookies or not
         :param download_delay: delayed time before download
         :param concurrent_requests: max concurrent requests
@@ -58,7 +56,6 @@ class Crawler(object):
         for request in requests or []:
             self.add_request(request)
         self.result_back = result_back
-        self.error_back = error_back
         self.download_delay = download_delay
         self.concurrent_requests = concurrent_requests
         self.max_retries = max_retries
