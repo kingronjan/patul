@@ -4,7 +4,7 @@ from .spider import AsyncSpider
 
 
 _crawler = None
-def _test(url_or_request, **request_kw):
+def test(url_or_request, **request_kw):
     """A decorator to test request
     Usage:
 
@@ -36,7 +36,7 @@ def fetch(url_or_request, **kwargs):
     """This method will return a response immediately"""
     r = None
 
-    @_test(url_or_request, **kwargs)
+    @test(url_or_request, **kwargs)
     def parse(response):
         nonlocal r
         r = response
