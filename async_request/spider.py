@@ -11,7 +11,7 @@ class AsyncSpider(object):
 
     def start_request(self):
         for url in self.start_urls or []:
-            yield Request(url, callback=self.parse)
+            self.crawler.add_request(Request(url, callback=self.parse))
 
     def parse(self, response):
         pass
