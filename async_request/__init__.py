@@ -1,16 +1,10 @@
 from .crawler import Crawler
-from .request import Request, FormRquest
-
-
-def crawl(requests, stop_after_crawled=True, **kwargs):
-    c = Crawler(requests, **kwargs)
-    c.run()
-    if stop_after_crawled:
-        c.close()
+from .request import Request, FormRequest
+from .spider import AsyncSpider
 
 
 _crawler = None
-def test(url_or_request, **request_kw):
+def _test(url_or_request, **request_kw):
     """A decorator to test request
     Usage:
 
@@ -42,7 +36,7 @@ def fetch(url_or_request, **kwargs):
     """This method will return a response immediately"""
     r = None
 
-    @test(url_or_request, **kwargs)
+    @_test(url_or_request, **kwargs)
     def parse(response):
         nonlocal r
         r = response

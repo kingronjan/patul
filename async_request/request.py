@@ -77,10 +77,10 @@ class Request(object):
         return self._cookies
 
     def __str__(self):
-        return '<async_request.Request {}>'.format(self.url)
+        return f'<Request {self.method} {self.url}>'
 
 
-class FormRquest(Request):
+class FormRequest(Request):
 
     def __init__(self, url, data=None, json=None, method='POST', **kwargs):
         self.data = data
@@ -92,6 +92,3 @@ class FormRquest(Request):
         kw['data'] = self.data
         kw['json'] = self.json
         return kw
-
-    def __str__(self):
-        return '<async_request.FormRequest {}>'.format(self.url)

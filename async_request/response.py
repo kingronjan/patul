@@ -8,13 +8,14 @@ class Response(object):
 
     def __init__(self, response, request):
         self._response = response
+        self._text = None
         self.request = request
 
     def __getattr__(self, item):
         return getattr(self._response, item)
 
     def __str__(self):
-        return '<async_request.Response {} {}>'.format(self.status_code, self.url)
+        return f'<Response {self.status_code} {self.url}>'.format
 
     __repr__ = __str__
 
@@ -24,22 +25,21 @@ class Response(object):
 
     @property
     def text(self):
-        if hasattr(self, '_text'):
-            return self._text
-        charset = re.search(b'charset=(.+?)"', self.content)
-        if charset:
-            charset = charset.group(1).decode('utf-8')
-            try:
-                text = self.content.decode(charset)
-            except:
-                return self._response.text
-        else:
-            return self._response.text
-        self._text = text
+        if self._text is None:
+            charset = re.search(b'charset=(.+?)"', self.content)
+            if charset:
+                charset = charset.group(1).decode('utf-8')
+                try:
+                    self._text = self.content.decode(charset)
+                except:
+                   pass
+            if not self._text:
+                self._text = self._response.text
         return self._text
 
     def recoding_text(self, encoding):
         self._text = self.content.decode(encoding)
+        return self._text
 
     @property
     def selector(self):
