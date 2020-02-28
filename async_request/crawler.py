@@ -74,13 +74,13 @@ class Crawler(object):
         if retries:
             self.logger.debug(f'Retrying download: {request} (retried {retries-1} times)')
         try:
-            response = self.session.request(**request.requests_kwargs())
+            r = self.session.request(**request.requests_kwargs())
         except Exception as e:
             if isinstance(e, (ConnectionError, Timeout,)):
                 self.retry_request(request)
             return self.logger.exception(e)
-        response = Response(response, request)
-        self.logger.debug(f'Request downloaded: {response}')
+        response = Response(r, request)
+        self.logger.debug(f'Downloaded: {response!r}')
         return response
 
     def retry_request(self, request, max_retries=None):
