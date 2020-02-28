@@ -45,7 +45,6 @@ class Request(object):
         # it will as a kwargs send to requests.request
         self._kwargs = kwargs
 
-    @property
     def requests_kwargs(self):
         """Use for requests"""
         return {
@@ -89,8 +88,8 @@ class FormRequest(Request):
         self.json = json
         super().__init__(url=url, method=method, **kwargs)
 
-    def _form_kwargs(self, **kwargs):
-        kw = super()._form_kwargs(**kwargs)
+    def requests_kwargs(self):
+        kw = super().requests_kwargs()
         kw['data'] = self.data
         kw['json'] = self.json
         return kw

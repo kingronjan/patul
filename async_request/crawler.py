@@ -74,7 +74,7 @@ class Crawler(object):
         if retries:
             self.logger.debug(f'Retrying download: {request} (retried {retries-1} times)')
         try:
-            response = self.session.request(**request.requests_kwargs)
+            response = self.session.request(**request.requests_kwargs())
         except Exception as e:
             if isinstance(e, (ConnectionError, Timeout,)):
                 self.retry_request(request)
@@ -101,7 +101,7 @@ class Crawler(object):
         try:
             results = request.callback(response)
         except Exception as e:
-            return self.logger.exception(e)
+            return self._log_parse_error(e, response)
         try:
             for result in iter_results(results):
                 if isinstance(result, Request):
@@ -109,7 +109,16 @@ class Crawler(object):
                 else:
                     await self.process_result(result)
         except Exception as e:
-            self.logger.exception(e)
+            self._log_parse_error(e, response)
+
+    def _log_parse_error(self, e, response):
+        length = len(e.args)
+        additional_msg = f'when parsing {response!r}'
+        if length == 0:
+            e.args = (additional_msg,)
+        else:
+            e.args = (*e.args, additional_msg,)
+        self.logger.exception(e)
 
     @_run_in_executor
     def process_result(self, result):
