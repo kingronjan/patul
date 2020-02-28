@@ -112,12 +112,7 @@ class Crawler(object):
             self._log_parse_error(e, response)
 
     def _log_parse_error(self, e, response):
-        length = len(e.args)
-        additional_msg = f'when parsing {response!r}'
-        if length == 0:
-            e.args = (additional_msg,)
-        else:
-            e.args = (*e.args, additional_msg,)
+        self.logger.error(f'Error happened when parsing: {response!r}, cause: {e}')
         self.logger.exception(e)
 
     @_run_in_executor
@@ -128,6 +123,7 @@ class Crawler(object):
         try:
             self.result_back(result)
         except Exception as e:
+            self.logger.error(f'Error happened when processing result: {result}, cause: {e}')
             self.logger.exception(e)
 
     async def crawl(self, request):
