@@ -74,7 +74,7 @@ class Crawler(object):
         if retries:
             self.logger.debug(f'Retrying download: {request} (retried {retries-1} times)')
         try:
-            response = self.session.request(**request.request_kwargs)
+            response = self.session.request(**request.requests_kwargs)
         except Exception as e:
             if isinstance(e, (ConnectionError, Timeout,)):
                 self.retry_request(request)
@@ -137,8 +137,10 @@ class Crawler(object):
             await asyncio.gather(*self._get_crawl_tasks())
 
     def run(self, close_after_crawled=True):
-        self.loop.run_until_complete(self._run())
-        self.close(close_after_crawled)
+        try:
+            self.loop.run_until_complete(self._run())
+        finally:
+            self.close(close_after_crawled)
 
     def close(self, close_loop=True):
         if isinstance(self.session, _requests.Session):
