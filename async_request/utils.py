@@ -1,6 +1,24 @@
+import hashlib
 import logging
 import weakref
 from typing import Generator
+
+
+def md5fy_request(request):
+    md5 = hashlib.md5()
+
+    def update(obj):
+        if not obj:
+            return
+        md5.update(str(obj).encode('utf-8'))
+
+    update(request.url)
+    update(request.params)
+    update(request.method)
+    if request.method == 'POST':
+        update(request.json)
+        update(request.data)
+    return md5.hexdigest()
 
 
 def iter_results(results):

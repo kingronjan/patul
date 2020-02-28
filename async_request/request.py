@@ -43,9 +43,11 @@ class Request(object):
         self.meta = meta or {}
         kwargs.setdefault('allow_redirects', True)
         # it will as a kwargs send to requests.request
-        self.request_kwargs = self._form_kwargs(**kwargs)
+        self._kwargs = kwargs
 
-    def _form_kwargs(self, **kwargs):
+    @property
+    def requests_kwargs(self):
+        """Use for requests"""
         return {
             'url': self.url,
             'params': self.params,
@@ -54,7 +56,7 @@ class Request(object):
             'timeout': self.timeout,
             'proxies': self.proxies,
             'method': self.method,
-            **kwargs
+            **self._kwargs
         }
 
     @property
