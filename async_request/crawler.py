@@ -101,11 +101,14 @@ class Crawler(object):
             results = request.callback(response)
         except Exception as e:
             return self.logger.exception(e)
-        for result in iter_results(results):
-            if isinstance(result, Request):
-                await self._add_request(result)
-            else:
-                await self.process_result(result)
+        try:
+            for result in iter_results(results):
+                if isinstance(result, Request):
+                    await self._add_request(result)
+                else:
+                    await self.process_result(result)
+        except Exception as e:
+            self.logger.exception(e)
 
     @_run_in_executor
     def process_result(self, result):
@@ -137,10 +140,8 @@ class Crawler(object):
             await asyncio.gather(*self._get_crawl_tasks())
 
     def run(self, close_after_crawled=True):
-        try:
-            self.loop.run_until_complete(self._run())
-        finally:
-            self.close(close_after_crawled)
+        self.loop.run_until_complete(self._run())
+        self.close(close_after_crawled)
 
     def close(self, close_loop=True):
         if isinstance(self.session, _requests.Session):
