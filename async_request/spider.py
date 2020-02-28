@@ -20,6 +20,12 @@ class AsyncSpider(object):
     def process_result(self, result):
         pass
 
+    def closed(self):
+        pass
+
     def run(self, close_after_crawled=True):
-        self.start_request()
-        self.crawler.run(close_after_crawled)
+        try:
+            self.start_request()
+            self.crawler.run(close_after_crawled)
+        finally:
+            self.closed()
