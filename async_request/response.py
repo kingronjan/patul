@@ -15,7 +15,7 @@ class Response(object):
         return getattr(self._response, item)
 
     def __str__(self):
-        return f'<Response {self.status_code} {self.url}>'.format
+        return f'<Response {self.status_code} {self.url}>'
 
     __repr__ = __str__
 
