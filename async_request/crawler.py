@@ -2,6 +2,7 @@
 
 import asyncio
 import functools
+from collections import Coroutine
 
 import requests as _requests
 from requests.exceptions import ConnectionError, Timeout
@@ -21,27 +22,26 @@ def _run_in_executor(func):
 class Crawler(object):
 
     def __init__(self,
-                 requests=None,
+                 start_requests=None,
                  result_back=None,
                  handle_cookies=True,
                  download_delay=0,
                  concurrent_requests=10,
                  max_retries=3,
                  priority=1,
-                 event_loop=None,
                  log_level='DEBUG',
-                 log_file=None):
+                 log_file=None,
+                 loop=None):
         """
-        :param requests: Request list
         :param result_back: function to process the result
         :param handle_cookies: handle the cookies or not
         :param download_delay: delayed time before download
         :param concurrent_requests: max concurrent requests
         :param priority: -1: first in first out, breadth-first
                           1: last in first out, depth-first
-        :param event_loop: async event loop
         :param log_level: logs level
         :param log_file: if not None, logs will save to it
+        :param loop: async event loop
         """
         if priority == -1:
             self._queue = asyncio.Queue()
@@ -53,20 +53,17 @@ class Crawler(object):
             self.session = _requests.Session()
         else:
             self.session = _requests
-        for request in requests or []:
-            self.add_request(request)
+        for request in start_requests or []:
+            self.put_request(request)
         self.result_back = result_back
         self.download_delay = download_delay
         self.concurrent_requests = concurrent_requests
         self.max_retries = max_retries
-        self.loop = event_loop or asyncio.get_event_loop()
+        self.loop = loop or asyncio.get_event_loop()
         self.logger = get_logger('asyncrequest.Crawler', level=log_level, file_path=log_file)
 
-    def add_request(self, request):
+    def put_request(self, request):
         self._queue.put_nowait(request)
-
-    async def _add_request(self, request):
-        await self._queue.put(request)
 
     @_run_in_executor
     def download(self, request):
@@ -77,19 +74,19 @@ class Crawler(object):
             r = self.session.request(**request.requests_kwargs())
         except Exception as e:
             if isinstance(e, (ConnectionError, Timeout,)):
-                self.retry_request(request)
+                self.loop.call_soon(self.retry_request, request)
             return self.logger.exception(e)
         response = Response(r, request)
         self.logger.debug(f'Downloaded: {response!r}')
         return response
 
-    def retry_request(self, request, max_retries=None):
+    async def retry_request(self, request, max_retries=None):
         if max_retries is None:
             max_retries = self.max_retries
         retries = request.meta.get('retry_times', 0)
         if retries < max_retries:
             request.meta['retry_times'] = retries + 1
-            self.add_request(request)
+            await self._queue.put(request)
         else:
             self.logger.debug(f'Gave up retry {request}')
 
@@ -105,7 +102,7 @@ class Crawler(object):
         try:
             for result in iter_results(results):
                 if isinstance(result, Request):
-                    await self._add_request(result)
+                    await self._queue.put(result)
                 else:
                     await self.process_result(result)
         except Exception as e:
@@ -115,13 +112,14 @@ class Crawler(object):
         self.logger.error(f'Error happened when parsing: {response!r}, cause: {e}')
         self.logger.exception(e)
 
-    @_run_in_executor
-    def process_result(self, result):
+    async def process_result(self, result):
         self.logger.debug(f'Crawled result: {result}')
         if not self.result_back:
             return
         try:
-            self.result_back(result)
+            _ = self.result_back(result)
+            if isinstance(_, Coroutine):
+                await _
         except Exception as e:
             self.logger.error(f'Error happened when processing result: {result}, cause: {e}')
             self.logger.exception(e)
@@ -145,9 +143,9 @@ class Crawler(object):
         while self._queue.qsize():
             await asyncio.gather(*self._get_crawl_tasks())
 
-    def run(self, close_after_crawled=True):
+    def run(self, close_loop=True):
         self.loop.run_until_complete(self._run())
-        self.close(close_after_crawled)
+        self.close(close_loop)
 
     def close(self, close_loop=True):
         if isinstance(self.session, _requests.Session):

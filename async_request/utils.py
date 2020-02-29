@@ -39,29 +39,25 @@ def get_logger(name, level='DEBUG', file_path=None):
         if is not None, logs will save to it,
         else, logs will not save to file.
     """
-    extra = {'app_name': name}
-    logger = logging.getLogger(__name__)
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
     formatter = logging.Formatter(
-        fmt='%(asctime)s [%(app_name)s] %(levelname)s %(message)s',
+        fmt='%(asctime)s [%(name)s] %(levelname)s %(message)s',
         datefmt='%Y-%m-%d %H:%M:%S'
     )
 
-    if 'syslog' not in _handlers:
-        syslog = logging.StreamHandler()
-        _handlers['syslog'] = syslog
-        syslog.setFormatter(formatter)
-    else:
-        syslog = _handlers['syslog']
+    if not 'stream' in _handlers:
+        stream = logging.StreamHandler()
+        stream.setFormatter(formatter)
+        _handlers['stream'] = stream
+    logger.addHandler(_handlers['stream'])
 
     if file_path is not None:
-        file_log = _handlers.get('filelog')
-        if not file_log:
-            file_log = logging.FileHandler(filename=file_path, encoding='utf-8')
-            _handlers['filelog'] = file_log
-        file_log.setFormatter(formatter)
-        logger.addHandler(file_log)
+        if not 'file' in _handlers:
+            file = logging.FileHandler(filename=file_path, encoding='utf-8')
+            file.setFormatter(formatter)
+            _handlers['file'] = file
+        logger.addHandler(_handlers['file'])
 
-    logger.addHandler(syslog)
-    logger.setLevel(level)
-    logger = logging.LoggerAdapter(logger, extra)
     return logger
