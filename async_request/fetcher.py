@@ -26,6 +26,9 @@ class AsyncFetcher(object):
             return Request(url_or_request, **kwargs)
         return url_or_request
 
+    def _run(self):
+        self.crawler.run(close_loop=False)
+
     def fetch(self, url_or_request, **request_kw):
         request = self._make_request(url_or_request, **request_kw)
         r = None
@@ -36,7 +39,7 @@ class AsyncFetcher(object):
 
         request.callback = parse
         self.crawler.put_request(request)
-        self.crawler.run(close_loop=False)
+        self._run()
         return r
 
     def test(self, url_or_request, **request_kw):
@@ -56,6 +59,6 @@ class AsyncFetcher(object):
         def test(func):
             request.callback = func
             self.crawler.put_request(request)
-            return functools.partial(self.crawler.run, close_loop=False)
+            return self._run
 
         return test
