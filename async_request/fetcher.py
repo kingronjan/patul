@@ -1,5 +1,3 @@
-import functools
-
 from async_request.crawler import Crawler
 from async_request.request import Request
 
@@ -27,7 +25,8 @@ class AsyncFetcher(object):
         return url_or_request
 
     def _run(self):
-        self.crawler.run(close_loop=False)
+        if not self.crawler.loop.is_running():
+            self.crawler.run(close_loop=False)
 
     def fetch(self, url_or_request, **request_kw):
         request = self._make_request(url_or_request, **request_kw)
