@@ -21,14 +21,14 @@ class MySpider(AsyncSpider):
     
     start_urls = ['https://cn.bing.com/']
     
-    def parse(self, response):
+    async def parse(self, response):
         print(response.xpath('//a/@href').get())
         yield Request('https://github.com/financialfly/async-request', callback=self.parse_github)
 
     def parse_github(self, response):
         yield {'hello': 'github'}
     
-    def process_result(self, result):
+    async def process_result(self, result):
         # Process result at here.
         print(result)
 
