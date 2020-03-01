@@ -2,20 +2,20 @@
 
 import asyncio
 import functools
-from collections import Coroutine
 
 import requests as _requests
 from requests.exceptions import ConnectionError, Timeout
 
 from async_request.request import Request
 from async_request.response import Response
-from async_request.utils import iter_results, get_logger
+from async_request.utils import iter_outputs, get_logger, async_func
 
 
 def _run_in_executor(func):
     @functools.wraps(func)
     def wrapped(crawler, *args):
         return crawler.loop.run_in_executor(None, func, crawler, *args)
+
     return wrapped
 
 
@@ -65,20 +65,48 @@ class Crawler(object):
     def put_request(self, request):
         self._queue.put_nowait(request)
 
+    def run(self, close_loop=True):
+        self.loop.run_until_complete(self._run())
+        self.close(close_loop)
+
+    def close(self, close_loop=True):
+        if isinstance(self.session, _requests.Session):
+            self.session.close()
+        if close_loop:
+            self.loop.close()
+
+    async def crawl(self, request):
+        await asyncio.sleep(self.download_delay)
+        response = await self.download(request)
+        if response is not None:
+            await self.process_response(response, request)
+
+    def _iter_crawl_tasks(self):
+        try:
+            for _ in range(self.concurrent_requests):
+                request = self._queue.get_nowait()
+                yield self.crawl(request)
+        except asyncio.queues.QueueEmpty:
+            pass
+
+    async def _run(self):
+        while self._queue.qsize():
+            await asyncio.gather(*self._iter_crawl_tasks())
+
     @_run_in_executor
     def download(self, request):
         retries = request.meta.get('retry_times')
         if retries:
-            self.logger.debug(f'Retrying download: {request} (retried {retries-1} times)')
+            self.logger.debug(
+                f'Retrying download: {request} (retried {retries - 1} times)'
+            )
         try:
             r = self.session.request(**request.requests_kwargs())
+            return Response(r, request)
         except Exception as e:
+            self.logger.exception(e)
             if isinstance(e, (ConnectionError, Timeout,)):
-                self.loop.call_soon(self.retry_request, request)
-            return self.logger.exception(e)
-        response = Response(r, request)
-        self.logger.debug(f'Downloaded: {response!r}')
-        return response
+                self.loop.create_task(self.retry_request(request))
 
     async def retry_request(self, request, max_retries=None):
         if max_retries is None:
@@ -91,67 +119,39 @@ class Crawler(object):
             self.logger.debug(f'Gave up retry {request}')
 
     async def process_response(self, response, request):
-        if not response:
-            return
+        self.logger.debug(f'Downloaded: {response!r}')
         if not request.callback:
             return self.logger.warning(f'No function to parse {request}')
         try:
-            results = request.callback(response)
+            outputs = request.callback(response)
+            outputs = await async_func(outputs)
+            await self.process_output(outputs, response)
         except Exception as e:
             return self._log_parse_error(e, response)
+
+    async def process_output(self, outputs, response):
         try:
-            for result in iter_results(results):
-                if isinstance(result, Request):
-                    await self._queue.put(result)
+            async for output in iter_outputs(outputs):
+                if isinstance(output, Request):
+                    await self._queue.put(output)
                 else:
-                    await self.process_result(result)
+                    await self.process_result(output)
         except Exception as e:
             self._log_parse_error(e, response)
-
-    def _log_parse_error(self, e, response):
-        self.logger.error(f'Error happened when parsing: {response!r}, cause: {e}')
-        self.logger.exception(e)
 
     async def process_result(self, result):
         self.logger.debug(f'Crawled result: {result}')
         if not self.result_back:
             return
         try:
-            _ = self.result_back(result)
-            if isinstance(_, Coroutine):
-                await _
+            await async_func(self.result_back(result))
         except Exception as e:
             self.logger.error(f'Error happened when processing result: {result}, cause: {e}')
             self.logger.exception(e)
 
-    async def crawl(self, request):
-        await asyncio.sleep(self.download_delay)
-        response = await self.download(request)
-        await self.process_response(response, request)
-
-    def _get_crawl_tasks(self):
-        tasks = []
-        try:
-            for _ in range(self.concurrent_requests):
-                request = self._queue.get_nowait()
-                tasks.append(self.crawl(request))
-        except asyncio.queues.QueueEmpty:
-            pass
-        return tasks
-
-    async def _run(self):
-        while self._queue.qsize():
-            await asyncio.gather(*self._get_crawl_tasks())
-
-    def run(self, close_loop=True):
-        self.loop.run_until_complete(self._run())
-        self.close(close_loop)
-
-    def close(self, close_loop=True):
-        if isinstance(self.session, _requests.Session):
-            self.session.close()
-        if close_loop:
-            self.loop.close()
+    def _log_parse_error(self, e, response):
+        self.logger.error(f'Error happened when parsing: {response!r}, cause: {e}')
+        self.logger.exception(e)
 
     def __del__(self):
         self.close()

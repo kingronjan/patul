@@ -32,7 +32,7 @@ class Response(object):
                 try:
                     self._text = self.content.decode(charset)
                 except:
-                   pass
+                    pass
             if not self._text:
                 self._text = self._response.text
         return self._text

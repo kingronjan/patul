@@ -1,11 +1,9 @@
-from collections import Coroutine
-
 from async_request.crawler import Crawler
 from async_request.request import Request
+from async_request.utils import async_func
 
 
 class AsyncSpider(object):
-
     start_urls = None
 
     def __init__(self, **kwargs):
@@ -26,14 +24,8 @@ class AsyncSpider(object):
     def closed(self):
         pass
 
-    def close(self, close_loop):
-        try:
-            _ = self.closed()
-            if isinstance(_, Coroutine):
-                self.loop.run_until_complete(_)
-        finally:
-            if close_loop:
-                self.loop.close()
+    async def close(self):
+        await async_func(self.closed())
 
     def run(self, close_loop=True):
         try:
@@ -43,4 +35,8 @@ class AsyncSpider(object):
                 self.crawler.put_request(request)
             self.crawler.run(close_loop=False)
         finally:
-            self.close(close_loop)
+            try:
+                self.loop.run_until_complete(self.close())
+            finally:
+                if close_loop:
+                    self.loop.close()

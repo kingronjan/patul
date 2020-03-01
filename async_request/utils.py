@@ -1,7 +1,8 @@
 import hashlib
 import logging
 import weakref
-from typing import Generator
+from collections import Coroutine
+from typing import Generator, AsyncGenerator
 
 
 def md5fy_request(request):
@@ -21,12 +22,35 @@ def md5fy_request(request):
     return md5.hexdigest()
 
 
-def iter_results(results):
-    if results is None:
-        return []
-    if not isinstance(results, Generator):
-        return [results]
-    return results
+async def async_func(maybe_coro):
+    if isinstance(maybe_coro, Coroutine):
+        return await maybe_coro
+    return maybe_coro
+
+
+def iter_outputs(outputs):
+    if isinstance(outputs, AsyncGenerator):
+        return outputs
+    if outputs is None:
+        outputs = []
+    elif not isinstance(outputs, Generator):
+        outputs = [outputs]
+    return AsyncIteratorWrapper(outputs)
+
+
+class AsyncIteratorWrapper:
+
+    def __init__(self, obj):
+        self._it = iter(obj)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._it)
+        except StopIteration:
+            raise StopAsyncIteration
 
 
 _handlers = weakref.WeakValueDictionary()

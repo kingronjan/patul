@@ -14,7 +14,7 @@ class AsyncFetcher(object):
     @property
     def crawler(self):
         if self._crawler is None:
-            self._crawler = Crawler()
+            self._crawler = Crawler(max_retries=0)
         return self._crawler
 
     def _make_request(self, url_or_request, **kwargs):
