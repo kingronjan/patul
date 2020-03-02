@@ -4,12 +4,17 @@ from async_request.utils import async_func
 
 
 class AsyncSpider(object):
+
     start_urls = None
 
     def __init__(self, **kwargs):
         kwargs.setdefault('result_back', self.process_result)
         self.crawler = Crawler(**kwargs)
         self.loop = self.crawler.loop
+        self.loop.run_until_complete(self.__async_init__())
+
+    async def __async_init__(self):
+        pass
 
     def start_requests(self):
         for url in self.start_urls or []:
