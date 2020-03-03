@@ -132,6 +132,8 @@ class Crawler(object):
     async def process_output(self, outputs, response):
         try:
             async for output in iter_outputs(outputs):
+                if output is None:
+                    continue
                 if isinstance(output, Request):
                     await self._queue.put(output)
                 else:
