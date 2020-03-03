@@ -27,7 +27,7 @@ class AsyncSpider(object):
         pass
 
 
-def run_spider(spider_cls, close_loop=True, **kwargs):
+def crawl_spider(spider_cls, close_loop=True, **kwargs):
     crawler = Crawler(**kwargs)
     loop = crawler.loop
     spider = spider_cls(loop)
