@@ -8,7 +8,7 @@ from requests.exceptions import ConnectionError, Timeout
 
 from async_request.request import Request
 from async_request.response import Response
-from async_request.utils import iter_outputs, get_logger, async_func
+from async_request.utils import iter_outputs, get_logger, coro_wrapper
 
 
 def _run_in_executor(func):
@@ -124,7 +124,7 @@ class Crawler(object):
             return self.logger.warning(f'No function to parse {request}')
         try:
             outputs = request.callback(response)
-            outputs = await async_func(outputs)
+            outputs = await coro_wrapper(outputs)
             await self.process_output(outputs, response)
         except Exception as e:
             return self._log_parse_error(e, response)
@@ -144,7 +144,7 @@ class Crawler(object):
         if not self.result_back:
             return
         try:
-            await async_func(self.result_back(result))
+            await coro_wrapper(self.result_back(result))
         except Exception as e:
             self.logger.error(f'Error happened when processing result: {result}, cause: {e}')
             self.logger.exception(e)

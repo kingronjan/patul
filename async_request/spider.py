@@ -1,16 +1,14 @@
 from async_request.crawler import Crawler
 from async_request.request import Request
-from async_request.utils import async_func
+from async_request.utils import coro_wrapper
 
 
 class AsyncSpider(object):
 
     start_urls = None
 
-    def __init__(self, **kwargs):
-        kwargs.setdefault('result_back', self.process_result)
-        self.crawler = Crawler(**kwargs)
-        self.loop = self.crawler.loop
+    def __init__(self, loop):
+        self.loop = loop
 
     async def __async_init__(self):
         pass
@@ -28,20 +26,25 @@ class AsyncSpider(object):
     def closed(self):
         pass
 
-    async def close(self):
-        await async_func(self.closed())
 
-    def run(self, close_loop=True):
+def run_spider(spider_cls, close_loop=True, **kwargs):
+    crawler = Crawler(**kwargs)
+    loop = crawler.loop
+    spider = spider_cls(loop)
+    crawler.result_back = spider.process_result
+
+    for request in spider.start_requests():
+        if not request.callback:
+            request.callback = spider.parse
+        crawler.put_request(request)
+
+    try:
+        loop.run_until_complete(spider.__async_init__())
+        crawler.run(close_loop=False)
+    finally:
         try:
-            for request in self.start_requests():
-                if not request.callback:
-                    request.callback = self.parse
-                self.crawler.put_request(request)
-            self.loop.run_until_complete(self.__async_init__())
-            self.crawler.run(close_loop=False)
+            coro = coro_wrapper(spider.closed())
+            loop.run_until_complete(coro)
         finally:
-            try:
-                self.loop.run_until_complete(self.close())
-            finally:
-                if close_loop:
-                    self.loop.close()
+            if close_loop:
+                loop.close()

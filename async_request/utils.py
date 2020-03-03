@@ -22,7 +22,7 @@ def md5fy_request(request):
     return md5.hexdigest()
 
 
-async def async_func(maybe_coro):
+async def coro_wrapper(maybe_coro):
     if isinstance(maybe_coro, Coroutine):
         return await maybe_coro
     return maybe_coro
