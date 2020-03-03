@@ -58,13 +58,11 @@ test
 ----
 Use `fetch` function to get a response immediately:
 ```python
-from async_request import AsyncFetcher
+from async_request import fetch
 
-
-fetcher = AsyncFetcher()
 
 def parse():
-    response = fetcher.fetch('https://www.bing.com')
+    response = fetch('https://www.bing.com')
     print(response)
     
    
@@ -78,12 +76,10 @@ the output will like this:
 
 Use the `test` decorator is also a method to test spider:
 ```python
-import async_request as AsyncFetcher
+import async_request as ar
 
 
-fetcher = AsyncFetcher()
-
-@fetcher.test('https://www.baidu.com')
+@ar.test('https://www.baidu.com')
 def parse(response):
     print(response.url, response.status_code)
     

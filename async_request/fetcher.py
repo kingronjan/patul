@@ -4,18 +4,13 @@ from async_request.request import Request
 
 class AsyncFetcher(object):
 
-    def __init__(self):
-        self._crawler = None
+    _crawler = None
 
-    def __del__(self):
-        if self._crawler is not None:
-            self._crawler.close()
-
-    @property
-    def crawler(self):
-        if self._crawler is None:
-            self._crawler = Crawler(max_retries=0)
-        return self._crawler
+    @classmethod
+    def crawler(cls):
+        if cls._crawler is None:
+            cls._crawler = Crawler(max_retries=0)
+        return cls._crawler
 
     def _make_request(self, url_or_request, **kwargs):
         if isinstance(url_or_request, str):
@@ -25,20 +20,22 @@ class AsyncFetcher(object):
         return url_or_request
 
     def _run(self):
-        if not self.crawler.loop.is_running():
-            self.crawler.run(close_loop=False)
+        if not self.crawler().loop.is_running():
+            self.crawler().run(close_loop=False)
+
+    def _put_request(self, request):
+        self.crawler().put_request(request)
 
     def fetch(self, url_or_request, **request_kw):
-        request = self._make_request(url_or_request, **request_kw)
+
         r = None
 
+        @self.test(url_or_request, **request_kw)
         def parse(response):
             nonlocal r
             r = response
 
-        request.callback = parse
-        self.crawler.put_request(request)
-        self._run()
+        parse()
         return r
 
     def test(self, url_or_request, **request_kw):
@@ -57,7 +54,15 @@ class AsyncFetcher(object):
 
         def test(func):
             request.callback = func
-            self.crawler.put_request(request)
+            self._put_request(request)
             return self._run
 
         return test
+
+
+def fetch(*args, **kwargs):
+    return AsyncFetcher().fetch(*args, **kwargs)
+
+
+def test(*args, **kwargs):
+    return AsyncFetcher().test(*args, **kwargs)
