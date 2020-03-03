@@ -11,7 +11,6 @@ class AsyncSpider(object):
         kwargs.setdefault('result_back', self.process_result)
         self.crawler = Crawler(**kwargs)
         self.loop = self.crawler.loop
-        self.loop.run_until_complete(self.__async_init__())
 
     async def __async_init__(self):
         pass
@@ -38,6 +37,7 @@ class AsyncSpider(object):
                 if not request.callback:
                     request.callback = self.parse
                 self.crawler.put_request(request)
+            self.loop.run_until_complete(self.__async_init__())
             self.crawler.run(close_loop=False)
         finally:
             try:
