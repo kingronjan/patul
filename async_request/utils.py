@@ -13,9 +13,9 @@ def md5fy_request(request):
             return
         md5.update(str(obj).encode('utf-8'))
 
-    update(request.url)
-    update(request.params)
-    update(request.method)
+    for obj in (request.url, request.params, request.method):
+        update(obj)
+
     if request.method == 'POST':
         update(request.json)
         update(request.data)
