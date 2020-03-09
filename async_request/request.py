@@ -73,7 +73,7 @@ class Request(object):
         if isinstance(self._cookies, list):
             jar = RequestsCookieJar()
             for c in self._cookies:
-                jar.set(c['name'], c['value'], domains=c['domains'], path=c['path'])
+                jar.set(c['name'], c['value'], domains=c['domain'], path=c['path'])
             return jar
         return self._cookies
 
