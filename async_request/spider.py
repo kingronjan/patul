@@ -10,7 +10,7 @@ class AsyncSpider(object):
     def __init__(self, loop):
         self.loop = loop
 
-    async def __async_init__(self):
+    async def __ainit__(self):
         pass
 
     def start_requests(self):
@@ -39,7 +39,7 @@ def crawl_spider(spider_cls, close_loop=True, **kwargs):
         crawler.put_request(request)
 
     try:
-        loop.run_until_complete(spider.__async_init__())
+        loop.run_until_complete(spider.__ainit__())
         crawler.run(close_loop=False)
     finally:
         try:
