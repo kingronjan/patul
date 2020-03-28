@@ -104,9 +104,11 @@ class Crawler(object):
             r = self.session.request(**request.requests_kwargs())
             return Response(r, request)
         except Exception as e:
-            self.logger.exception(e)
             if isinstance(e, (ConnectionError, Timeout,)):
+                self.logger.error(e)
                 self.loop.create_task(self.retry_request(request))
+            else:
+                self.logger.exception(e)
 
     async def retry_request(self, request, max_retries=None):
         if max_retries is None:
