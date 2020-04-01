@@ -60,9 +60,6 @@ class AsyncFetcher(object):
         return test
 
 
-def fetch(*args, **kwargs):
-    return AsyncFetcher().fetch(*args, **kwargs)
-
-
-def test(*args, **kwargs):
-    return AsyncFetcher().test(*args, **kwargs)
+fetcher = AsyncFetcher()
+fetch = fetcher.fetch
+test = fetcher.test
