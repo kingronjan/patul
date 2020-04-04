@@ -1,21 +1,23 @@
-# coding=utf-8
-
 import asyncio
 import functools
+import logging
+from collections import Coroutine
+from typing import Generator, AsyncGenerator
 
 import requests as _requests
 from requests.exceptions import ConnectionError, Timeout
 
 from async_request.request import Request
 from async_request.response import Response
-from async_request.utils import iter_outputs, get_logger, coro_wrapper
+
+LOG_FMT = '%(asctime)s [%(name)s] %(levelname)s %(message)s'
+LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'
 
 
 def _run_in_executor(func):
     @functools.wraps(func)
     def wrapped(crawler, *args):
         return crawler.loop.run_in_executor(None, func, crawler, *args)
-
     return wrapped
 
 
@@ -29,8 +31,7 @@ class Crawler(object):
                  concurrent_requests=10,
                  max_retries=3,
                  priority=1,
-                 log_level='DEBUG',
-                 log_file=None,
+                 log_settings=None,
                  loop=None):
         """
         :param result_back: function to process the result
@@ -39,8 +40,7 @@ class Crawler(object):
         :param concurrent_requests: max concurrent requests
         :param priority: -1: first in first out, breadth-first
                           1: last in first out, depth-first
-        :param log_level: logs level
-        :param log_file: if not None, logs will save to it
+        :param log_settings: log settings
         :param loop: async event loop
         """
         if priority == -1:
@@ -49,18 +49,21 @@ class Crawler(object):
             self._queue = asyncio.LifoQueue()
         else:
             raise ValueError(f'Argument priority expect 1 or -1, got {priority}')
+
         if handle_cookies:
             self.session = _requests.Session()
         else:
             self.session = _requests
+
         for request in start_requests or []:
             self.put_request(request)
+
         self.result_back = result_back
         self.download_delay = download_delay
         self.concurrent_requests = concurrent_requests
         self.max_retries = max_retries
         self.loop = loop or asyncio.get_event_loop()
-        self.logger = get_logger('asyncrequest.Crawler', level=log_level, file_path=log_file)
+        self.logger = _logger(log_settings or {})
 
     def put_request(self, request):
         self._queue.put_nowait(request)
@@ -81,43 +84,38 @@ class Crawler(object):
         if response is not None:
             await self.process_response(response, request)
 
-    def _iter_crawl_tasks(self):
-        try:
-            for _ in range(self.concurrent_requests):
-                request = self._queue.get_nowait()
-                yield self.crawl(request)
-        except asyncio.queues.QueueEmpty:
-            pass
-
     async def _run(self):
+        def iter_task():
+            try:
+                for _ in range(self.concurrent_requests):
+                    request = self._queue.get_nowait()
+                    yield self.crawl(request)
+            except asyncio.queues.QueueEmpty:
+                pass
+
         while self._queue.qsize():
-            await asyncio.gather(*self._iter_crawl_tasks())
+            await asyncio.gather(*iter_task())
 
     @_run_in_executor
     def download(self, request):
-        retries = request.meta.get('retry_times')
-        if retries:
-            self.logger.debug(
-                f'Retrying download: {request} (retried {retries - 1} times)'
-            )
         try:
             r = self.session.request(**request.requests_kwargs())
             return Response(r, request)
         except Exception as e:
             if isinstance(e, (ConnectionError, Timeout,)):
-                self.logger.error(e)
-                self.loop.create_task(self.retry_request(request))
+                self.loop.create_task(self.retry_download(request, e))
             else:
-                self.logger.exception(e)
+                self._log_err('downloading', request)
 
-    async def retry_request(self, request, max_retries=None):
-        if max_retries is None:
-            max_retries = self.max_retries
+    async def retry_download(self, request, reason):
         retries = request.meta.get('retry_times', 0)
-        if retries < max_retries:
-            request.meta['retry_times'] = retries + 1
+        if retries < self.max_retries:
             await self._queue.put(request)
-        else:
+            request.meta['retry_times'] = retries + 1
+            self.logger.debug(
+                f'Preparing to retry: {request} caused by {reason}. (retried {retries - 1} times)'
+            )
+        elif self.max_retries != 0:
             self.logger.debug(f'Gave up retry {request}')
 
     async def process_response(self, response, request):
@@ -127,21 +125,18 @@ class Crawler(object):
         try:
             outputs = request.callback(response)
             outputs = await coro_wrapper(outputs)
-            await self.process_output(outputs, response)
-        except Exception as e:
-            return self._log_parse_error(e, response)
+            await self.process_output(outputs)
+        except:
+            self._log_err('parsing', response)
 
-    async def process_output(self, outputs, response):
-        try:
-            async for output in iter_outputs(outputs):
-                if output is None:
-                    continue
-                if isinstance(output, Request):
-                    await self._queue.put(output)
-                else:
-                    await self.process_result(output)
-        except Exception as e:
-            self._log_parse_error(e, response)
+    async def process_output(self, outputs):
+        async for output in _iter_outputs(outputs):
+            if output is None:
+                continue
+            if isinstance(output, Request):
+                await self._queue.put(output)
+            else:
+                await self.process_result(output)
 
     async def process_result(self, result):
         self.logger.debug(f'Crawled result: {result}')
@@ -149,13 +144,61 @@ class Crawler(object):
             return
         try:
             await coro_wrapper(self.result_back(result))
-        except Exception as e:
-            self.logger.error(f'Error happened when processing result: {result}, cause: {e}')
-            self.logger.exception(e)
+        except:
+            self._log_err('processing result', result)
 
-    def _log_parse_error(self, e, response):
-        self.logger.error(f'Error happened when parsing: {response!r}, cause: {e}')
-        self.logger.exception(e)
+    def _log_err(self, situation, info):
+        self.logger.error(f'Error happened when {situation}: {info}', exc_info=True)
 
     def __del__(self):
         self.close()
+
+
+async def coro_wrapper(maybe_coro):
+    if isinstance(maybe_coro, Coroutine):
+        return await maybe_coro
+    return maybe_coro
+
+
+class AsyncIteratorWrapper:
+
+    def __init__(self, obj):
+        self._it = iter(obj)
+
+    def __aiter__(self):
+        return self
+
+    async def __anext__(self):
+        try:
+            return next(self._it)
+        except StopIteration:
+            raise StopAsyncIteration
+
+
+def _iter_outputs(outputs):
+    if isinstance(outputs, AsyncGenerator):
+        return outputs
+    if outputs is None:
+        outputs = []
+    elif not isinstance(outputs, Generator):
+        outputs = [outputs]
+    return AsyncIteratorWrapper(outputs)
+
+
+def _logger(settings):
+    logger = logging.getLogger('a.crawler')
+    logger.setLevel(settings.get('level', 'DEBUG'))
+
+    formatter = settings.get('formatter') or logging.Formatter(fmt=LOG_FMT, datefmt=LOG_DATE_FMT)
+
+    if settings.get('to_stream', True):
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
+
+    if 'fp' in settings:
+        handler = logging.FileHandler(settings['fp'], encoding='utf-8')
+        handler.setFormatter(formatter)
+        logger.addHandler(handler)
+
+    return logger
