@@ -1,6 +1,7 @@
 from urllib.parse import urljoin
 
 from parsel import Selector
+from async_request.request import Request
 
 
 class Response(object):
@@ -43,3 +44,14 @@ class Response(object):
 
     def urljoin(self, url):
         return urljoin(self.url, url)
+
+    def follow(self, url, *args, **kwargs):
+        if isinstance(url, Selector) and url.root.tag == 'a':
+            url = url.root.tag.get('href')
+            if url is None:
+                raise ValueError('selector does not have `href` attribute.')
+        elif not isinstance(url, str):
+            raise ValueError('param `url` only accept str or Selector type.')
+
+        url = self.urljoin(url)
+        return Request(url, *args, **kwargs)
