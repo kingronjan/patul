@@ -1,6 +1,5 @@
-from async_request.crawler import Crawler
+from async_request.crawler import Crawler, coro_wrapper
 from async_request.request import Request
-from async_request.utils import coro_wrapper
 
 
 class AsyncSpider(object):

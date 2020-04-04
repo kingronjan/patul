@@ -46,8 +46,8 @@ class Response(object):
         return urljoin(self.url, url)
 
     def follow(self, url, *args, **kwargs):
-        if isinstance(url, Selector) and url.root.tag == 'a':
-            url = url.root.tag.get('href')
+        if isinstance(url, Selector):
+            url = url.xpath('./@href').get()
             if url is None:
                 raise ValueError('selector does not have `href` attribute.')
         elif not isinstance(url, str):
