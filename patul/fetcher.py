@@ -59,6 +59,10 @@ class Fetcher(object):
 
         return test
 
+    def __del__(self):
+        if self._crawler is not None:
+            self._crawler.close()
+
 
 fetcher = Fetcher()
 fetch = fetcher.fetch
