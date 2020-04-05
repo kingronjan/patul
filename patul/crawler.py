@@ -186,19 +186,22 @@ def _iter_outputs(outputs):
 
 
 def _logger(settings):
-    logger = logging.getLogger('a.crawler')
+    logger = logging.getLogger('patul.crawler')
     logger.setLevel(settings.get('level', 'DEBUG'))
 
-    formatter = settings.get('formatter') or logging.Formatter(fmt=LOG_FMT, datefmt=LOG_DATE_FMT)
-
-    if settings.get('to_stream', True):
-        stream_handler = logging.StreamHandler()
-        stream_handler.setFormatter(formatter)
-        logger.addHandler(stream_handler)
+    if 'formatter' in settings:
+        formatter = settings['formatter']
+    else:
+        formatter = logging.Formatter(fmt=LOG_FMT, datefmt=LOG_DATE_FMT)
 
     if 'fp' in settings:
         handler = logging.FileHandler(settings['fp'], encoding='utf-8')
         handler.setFormatter(formatter)
         logger.addHandler(handler)
+
+    if settings.get('to_stream', True):
+        stream_handler = logging.StreamHandler()
+        stream_handler.setFormatter(formatter)
+        logger.addHandler(stream_handler)
 
     return logger
