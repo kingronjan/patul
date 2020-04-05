@@ -1,4 +1,5 @@
 import asyncio
+import concurrent.futures
 import functools
 import logging
 from collections import Coroutine
@@ -17,7 +18,7 @@ LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'
 def _run_in_executor(func):
     @functools.wraps(func)
     def wrapped(crawler, *args):
-        return crawler.loop.run_in_executor(None, func, crawler, *args)
+        return crawler.loop.run_in_executor(crawler.executor, func, crawler, *args)
     return wrapped
 
 
@@ -61,6 +62,7 @@ class Crawler(object):
         self.result_back = result_back
         self.download_delay = download_delay
         self.concurrent_requests = concurrent_requests
+        self.executor = concurrent.futures.ThreadPoolExecutor(max_workers=self.concurrent_requests)
         self.max_retries = max_retries
         self.loop = loop or asyncio.get_event_loop()
         self.logger = _logger(log_settings or {})
@@ -71,12 +73,6 @@ class Crawler(object):
     def run(self, close_loop=True):
         self.loop.run_until_complete(self._run())
         self.close(close_loop)
-
-    def close(self, close_loop=True):
-        if isinstance(self.session, _requests.Session):
-            self.session.close()
-        if close_loop:
-            self.loop.close()
 
     async def crawl(self, request):
         await asyncio.sleep(self.download_delay)
@@ -95,6 +91,13 @@ class Crawler(object):
 
         while self._queue.qsize():
             await asyncio.gather(*iter_task())
+
+    def close(self, close_loop=True):
+        if isinstance(self.session, _requests.Session):
+            self.session.close()
+        if close_loop:
+            self.loop.close()
+        self.executor.shutdown()
 
     @_run_in_executor
     def download(self, request):
