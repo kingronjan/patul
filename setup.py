@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 setup(
     name='patul',
-    version=0.1002,
+    version=0.1003,
     description=(
         'A tiny spider based on asyncio and requests.'
     ),
