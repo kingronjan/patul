@@ -1,8 +1,8 @@
-from async_request.crawler import Crawler, coro_wrapper
-from async_request.request import Request
+from patul.crawler import Crawler, coro_wrapper
+from patul.request import Request
 
 
-class AsyncSpider(object):
+class Spider(object):
 
     start_urls = None
 
@@ -26,7 +26,7 @@ class AsyncSpider(object):
         pass
 
 
-def crawl_spider(spider_cls, close_loop=True, **kwargs):
+def crawl(spider_cls, close_loop=True, **kwargs):
     crawler = Crawler(**kwargs)
     loop = crawler.loop
     spider = spider_cls(loop)

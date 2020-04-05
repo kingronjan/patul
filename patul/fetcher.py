@@ -1,8 +1,8 @@
-from async_request.crawler import Crawler
-from async_request.request import Request
+from patul.crawler import Crawler
+from patul.request import Request
 
 
-class AsyncFetcher(object):
+class Fetcher(object):
 
     _crawler = None
 
@@ -60,6 +60,6 @@ class AsyncFetcher(object):
         return test
 
 
-fetcher = AsyncFetcher()
+fetcher = Fetcher()
 fetch = fetcher.fetch
 test = fetcher.test

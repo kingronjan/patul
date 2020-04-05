@@ -1,7 +1,7 @@
 from urllib.parse import urljoin
 
 from parsel import Selector
-from async_request.request import Request
+from patul.request import Request
 
 
 class Response(object):

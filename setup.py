@@ -3,10 +3,10 @@
 from setuptools import setup, find_packages
 
 setup(
-    name='async-request',
-    version=0.1889,
+    name='patul',
+    version=0.0001,
     description=(
-        'A lightweight network request framework'
+        'A tiny spider based on asyncio and requests.'
     ),
     long_description_content_type='text/markdown',
     long_description=open('README.md').read(),
@@ -17,7 +17,7 @@ setup(
     license='BSD License',
     packages=find_packages(),
     platforms=["all"],
-    url='https://github.com/financialfly/async-request',
+    url='https://github.com/financialfly/patul',
     classifiers=[
         'Development Status :: 4 - Beta',
         'Operating System :: OS Independent',

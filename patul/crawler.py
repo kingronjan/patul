@@ -7,8 +7,8 @@ from typing import Generator, AsyncGenerator
 import requests as _requests
 from requests.exceptions import ConnectionError, Timeout
 
-from async_request.request import Request
-from async_request.response import Response
+from patul.request import Request
+from patul.response import Response
 
 LOG_FMT = '%(asctime)s [%(name)s] %(levelname)s %(message)s'
 LOG_DATE_FMT = '%Y-%m-%d %H:%M:%S'

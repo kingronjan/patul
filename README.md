@@ -1,29 +1,29 @@
-async-request
-=============
+patul
+=====
 
-A lightweight network request framework based on requests & asyncio
+A tiny spider based on asyncio and requests.
 
 install
 -------
 
 ```bash
-pip install async_request
+pip install patul
 ```
 
 usage
 -----
 Just like scrapy:
 ```python
-from async_request import AsyncSpider, Request
+import patul
 
 
-class MySpider(AsyncSpider):
+class MySpider(patul.Spider):
     
     start_urls = ['https://cn.bing.com/']
     
     async def parse(self, response):
         print(response.xpath('//a/@href').get())
-        yield Request('https://github.com/financialfly/async-request', callback=self.parse_github)
+        yield patul.Request('https://github.com/financialfly/async-request', callback=self.parse_github)
 
     def parse_github(self, response):
         yield {'hello': 'github'}
@@ -35,30 +35,31 @@ class MySpider(AsyncSpider):
 
 if __name__ == '__main__':
     # Run spider
-    MySpider().run()
+    patul.crawl(MySpider)
 ```
 For more detailed control (like: handle cookies, download delay, concurrent requests, max retries, logs settings etc.): (refer to the constructor of the `Crawler` class):
 ```python
-from async_request import AsyncSpider
+import patul
 
-class MySpider(AsyncSpider):
+class MySpider(patul.Spider):
     ...
 
 if __name__ == '__main__':
-    MySpider(
+    patul.crawl(
+        MySpider, 
         handle_cookies=True, 
-        download_delay=0,
-        concurrent_requests=10,
-        max_retries=3,
-        log_file='spider.log'
-    ).run()
+        download_delay=0, 
+        concurrent_requests=10, 
+        max_retries=3, 
+        log_settings={'fp': 'spider.log'}
+    )
 ```
 
 test
 ----
 Use `fetch` function to get a response immediately:
 ```python
-from async_request import fetch
+from patul import fetch
 
 
 def parse():
@@ -76,10 +77,10 @@ the output will like this:
 
 Use the `test` decorator is also a method to test spider:
 ```python
-import async_request as ar
+import patul
 
 
-@ar.test('https://www.baidu.com')
+@patul.test('https://www.baidu.com')
 def parse(response):
     print(response.url, response.status_code)
     
