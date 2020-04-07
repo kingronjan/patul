@@ -26,6 +26,6 @@ def fetch(url_or_request, **kwargs):
 
     with Crawler(**crawler_kwargs) as c:
         c.put_request(req)
-        c.run()
+        c.run(close_loop=False)
 
     return resp
