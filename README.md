@@ -67,28 +67,32 @@ def parse():
     print(response)
     
    
-if __name__ == '__main__':
-    parse()
+parse()
 ```
 the output will like this:
 ```
 <Response 200 https://cn.bing.com/>
 ```
 
-Use the `test` decorator is also a method to test spider:
+The `fetch` function also could be use like this:
 ```python
 import patul
 
 
-@patul.test('https://www.baidu.com')
 def parse(response):
-    print(response.url, response.status_code)
-    
-    
-if __name__ == '__main__':
-    parse()
+    print(response)
+    yield patul.Request(response.url, callback=parse_next)
+
+
+def parse_next(response):
+    print(response.status_code)
+    yield {'hello': 'world'}
+
+
+patul.fetch('http://www.baidu.com', callback=parse)
 ```
 then run the script, you will see the result:
 ```
-https://www.baidu.com/ 200
+<Response 200 http://www.baidu.com/>
+200
 ```

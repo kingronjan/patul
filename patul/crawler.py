@@ -153,6 +153,12 @@ class Crawler(object):
     def _log_err(self, situation, info):
         self.logger.error(f'Error happened when {situation}: {info}', exc_info=True)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
+
 
 async def coro_wrapper(maybe_coro):
     if isinstance(maybe_coro, Coroutine):
